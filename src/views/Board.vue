@@ -10,9 +10,9 @@
         @dragover.prevent
         @dragenter.prevent
         >
-
-        <div class="flex items-center mb-2 font-bold">
+        <div class="flex justify-content space-between mb-2 font-bold">
           {{ column.name }}
+          <button class="remove-button" @click="removeColumn($columnIndex)">X</button>
         </div>
         <div class="list-reset">
           <div
@@ -22,6 +22,7 @@
             draggable
             @dragstart="pickUpTask($event, $taskIndex, $columnIndex)"
             @click="goToTask(task)"
+            @drop.stop="moveTaskOrColumn($event, column.tasks, $columnIndex, $taskIndex)"
           >
             <span class="w-full flex-no-shrink font-bold">
               {{ task.name }}
@@ -40,6 +41,15 @@
            />
         </div>
       </div>
+
+      <div class='column flex'>
+        <input type="text"
+        class="p-2 mr-2 flex-grow"
+        placeholder="New Column Name"
+        v-model="newColumnName"
+        @keyup.enter="createColumn"
+        >
+      </div>
     </div>
 
     <div class="task-bg" v-if="isTaskOpen" @click.self="close">
@@ -51,6 +61,11 @@
 <script>
 import { mapState } from 'vuex'
 export default {
+  data () {
+    return {
+      newColumnName: ''
+    }
+  },
   computed: {
     ...mapState(['board']),
     isTaskOpen () {
@@ -71,18 +86,22 @@ export default {
       })
       event.target.value = ''
     },
-    pickUpTask (event, taskIndex, fromColumnIndex) { // loads in task + column info on drag
+    createColumn () {
+      this.$store.commit('CREATE_COLUMN', { name: this.newColumnName })
+      this.newColumnName = ''
+    },
+    pickUpTask (event, fromTaskIndex, fromColumnIndex) { // loads in task + column info on drag
       event.dataTransfer.effectAllowed = 'move'
       event.dataTransfer.dropEffect = 'move'
-      event.dataTransfer.setData('task-index', taskIndex) // dont want to stringify object on transfer bc itll become new object in state
+      event.dataTransfer.setData('from-task-index', fromTaskIndex) // dont want to stringify object on transfer bc itll become new object in state
       event.dataTransfer.setData('from-column-index', fromColumnIndex)
       event.dataTransfer.setData('type', 'task')
     },
-    moveTask (e, toColumnTasks) {
+    moveTask (e, toColumnTasks, toTaskIndex) {
       const fromColumnIndex = e.dataTransfer.getData('from-column-index')
       const fromColumnTasks = this.board.columns[fromColumnIndex].tasks
-      const taskIndex = e.dataTransfer.getData('task-index')
-      this.$store.commit('MOVE_TASK', { fromColumnTasks, toColumnTasks, taskIndex })
+      const fromTaskIndex = e.dataTransfer.getData('from-task-index')
+      this.$store.commit('MOVE_TASK', { fromColumnTasks, toColumnTasks, fromTaskIndex, toTaskIndex })
     },
     pickUpColumn (event, fromColumnIndex) {
       event.dataTransfer.effectAllowed = 'move'
@@ -94,13 +113,16 @@ export default {
       const fromColumnIndex = event.dataTransfer.getData('from-column-index')
       this.$store.commit('MOVE_COLUMN', { fromColumnIndex, toColumnIndex })
     },
-    moveTaskOrColumn (event, toColumnTasks, toColumnIndex) {
+    moveTaskOrColumn (event, toColumnTasks, toColumnIndex, toTaskIndex) {
       const type = event.dataTransfer.getData('type')
       if (type === 'task') {
-        this.moveTask(event, toColumnTasks)
+        this.moveTask(event, toColumnTasks, toTaskIndex !== undefined ? toTaskIndex : toColumnTasks.length)
       } else {
         this.moveColumn(event, toColumnIndex)
       }
+    },
+    removeColumn (columnIndex) {
+      this.$store.commit('REMOVE_COLUMN', { columnIndex })
     }
   }
 }
@@ -123,5 +145,14 @@ export default {
 .task-bg {
   @apply pin absolute;
   background: rgba(0, 0, 0, 0.5);
+}
+
+.remove-button {
+  color: red;
+  border: 2px
+}
+
+.remove-button:hover {
+  cursor: pointer
 }
 </style>
