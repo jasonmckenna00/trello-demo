@@ -1,47 +1,15 @@
 <template>
   <div class="board">
     <div class="flex flex-row items-start">
-      <div class="column"
+      
+      <BoardColumn 
         v-for="(column, $columnIndex) of board.columns"
-        :key="$columnIndex"
-        draggable
-        @dragstart.self="pickUpColumn($event, $columnIndex)"
-        @drop="moveTaskOrColumn($event, column.tasks, $columnIndex)"
-        @dragover.prevent
-        @dragenter.prevent
-        >
-        <div class="flex justify-content space-between mb-2 font-bold">
-          {{ column.name }}
-          <button class="remove-button" @click="removeColumn($columnIndex)">X</button>
-        </div>
-        <div class="list-reset">
-          <div
-            class="task"
-            v-for="(task, $taskIndex) of column.tasks"
-            :key="$taskIndex"
-            draggable
-            @dragstart="pickUpTask($event, $taskIndex, $columnIndex)"
-            @click="goToTask(task)"
-            @drop.stop="moveTaskOrColumn($event, column.tasks, $columnIndex, $taskIndex)"
-          >
-            <span class="w-full flex-no-shrink font-bold">
-              {{ task.name }}
-            </span>
-            <p
-              v-if="task.description"
-              class="w-full flex-no-shrink mt-1 text-sm"
-            >
-              {{ task.description }}
-            </p>
-          </div>
-
-          <input type="text" class="block p-2 w-full bg-transparent"
-            placeholder="+ Enter new Task"
-            @keyup.enter="createTask($event,column.tasks)"
-           />
-        </div>
-      </div>
-
+        :key='$columnIndex'
+        :column='column'
+        :columnIndex=$columnIndex
+        :board=board
+      
+      />
       <div class='column flex'>
         <input type="text"
         class="p-2 mr-2 flex-grow"
@@ -60,7 +28,11 @@
 
 <script>
 import { mapState } from 'vuex'
+import BoardColumn from '@/components/BoardColumn'
 export default {
+  components:{
+    BoardColumn
+  },
   data () {
     return {
       newColumnName: ''
@@ -73,57 +45,16 @@ export default {
     }
   },
   methods: {
-    goToTask (task) {
-      this.$router.push({ name: 'task', params: { id: task.id } })
-    },
+    
     close () {
       this.$router.push({ name: 'board' })
     },
-    createTask (event, tasks) {
-      this.$store.commit('CREATE_TASK', {
-        tasks,
-        name: event.target.value
-      })
-      event.target.value = ''
-    },
+    
     createColumn () {
       this.$store.commit('CREATE_COLUMN', { name: this.newColumnName })
       this.newColumnName = ''
     },
-    pickUpTask (event, fromTaskIndex, fromColumnIndex) { // loads in task + column info on drag
-      event.dataTransfer.effectAllowed = 'move'
-      event.dataTransfer.dropEffect = 'move'
-      event.dataTransfer.setData('from-task-index', fromTaskIndex) // dont want to stringify object on transfer bc itll become new object in state
-      event.dataTransfer.setData('from-column-index', fromColumnIndex)
-      event.dataTransfer.setData('type', 'task')
-    },
-    moveTask (e, toColumnTasks, toTaskIndex) {
-      const fromColumnIndex = e.dataTransfer.getData('from-column-index')
-      const fromColumnTasks = this.board.columns[fromColumnIndex].tasks
-      const fromTaskIndex = e.dataTransfer.getData('from-task-index')
-      this.$store.commit('MOVE_TASK', { fromColumnTasks, toColumnTasks, fromTaskIndex, toTaskIndex })
-    },
-    pickUpColumn (event, fromColumnIndex) {
-      event.dataTransfer.effectAllowed = 'move'
-      event.dataTransfer.dropEffect = 'move'
-      event.dataTransfer.setData('from-column-index', fromColumnIndex)
-      event.dataTransfer.setData('type', 'column')
-    },
-    moveColumn (event, toColumnIndex) {
-      const fromColumnIndex = event.dataTransfer.getData('from-column-index')
-      this.$store.commit('MOVE_COLUMN', { fromColumnIndex, toColumnIndex })
-    },
-    moveTaskOrColumn (event, toColumnTasks, toColumnIndex, toTaskIndex) {
-      const type = event.dataTransfer.getData('type')
-      if (type === 'task') {
-        this.moveTask(event, toColumnTasks, toTaskIndex !== undefined ? toTaskIndex : toColumnTasks.length)
-      } else {
-        this.moveColumn(event, toColumnIndex)
-      }
-    },
-    removeColumn (columnIndex) {
-      this.$store.commit('REMOVE_COLUMN', { columnIndex })
-    }
+    
   }
 }
 </script>
@@ -133,10 +64,6 @@ export default {
   @apply flex items-center flex-wrap shadow mb-2 py-2 px-2 rounded bg-white text-grey-darkest no-underline;
 }
 
-.column {
-  @apply bg-grey-light p-2 mr-4 text-left shadow rounded;
-  min-width: 350px;
-}
 
 .board {
   @apply p-4 bg-teal-dark h-full overflow-auto;

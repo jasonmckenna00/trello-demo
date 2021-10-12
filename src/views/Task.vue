@@ -9,6 +9,7 @@
 
       <textarea class = "relative bg-transparent px-2 border my -2 h-64 borader-none leading-none"
         :value="task.description"
+        placeholder="Write a Description"
         @change="updateTaskProperty($event, 'description')">
         </textarea>
     </div>
