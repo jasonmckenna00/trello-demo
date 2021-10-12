@@ -1,14 +1,14 @@
 <template>
   <div class="board">
     <div class="flex flex-row items-start">
-      
-      <BoardColumn 
+
+      <BoardColumn
         v-for="(column, $columnIndex) of board.columns"
         :key='$columnIndex'
         :column='column'
         :columnIndex=$columnIndex
         :board=board
-      
+
       />
       <div class='column flex'>
         <input type="text"
@@ -30,7 +30,7 @@
 import { mapState } from 'vuex'
 import BoardColumn from '@/components/BoardColumn'
 export default {
-  components:{
+  components: {
     BoardColumn
   },
   data () {
@@ -45,16 +45,16 @@ export default {
     }
   },
   methods: {
-    
+
     close () {
       this.$router.push({ name: 'board' })
     },
-    
+
     createColumn () {
       this.$store.commit('CREATE_COLUMN', { name: this.newColumnName })
       this.newColumnName = ''
-    },
-    
+    }
+
   }
 }
 </script>
@@ -63,8 +63,6 @@ export default {
 .task {
   @apply flex items-center flex-wrap shadow mb-2 py-2 px-2 rounded bg-white text-grey-darkest no-underline;
 }
-
-
 .board {
   @apply p-4 bg-teal-dark h-full overflow-auto;
 }
